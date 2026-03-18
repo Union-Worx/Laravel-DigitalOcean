@@ -13,10 +13,10 @@ declare(strict_types=1);
 
 namespace GrahamCampbell\Tests\DigitalOcean;
 
+use DigitalOceanV2\Api\Region;
 use DigitalOceanV2\Client;
 use GrahamCampbell\DigitalOcean\DigitalOceanFactory;
 use GrahamCampbell\DigitalOcean\DigitalOceanManager;
-use GrahamCampbell\TestBench\AbstractTestCase as AbstractTestBenchTestCase;
 use Illuminate\Contracts\Config\Repository;
 use Mockery;
 
@@ -25,7 +25,7 @@ use Mockery;
  *
  * @author Graham Campbell <hello@gjcampbell.co.uk>
  */
-class DigitalOceanManagerTest extends AbstractTestBenchTestCase
+class DigitalOceanManagerTest extends AbstractUnitTestCase
 {
     public function testCreateConnection(): void
     {
@@ -43,6 +43,53 @@ class DigitalOceanManagerTest extends AbstractTestBenchTestCase
         self::assertInstanceOf(Client::class, $return);
 
         self::assertArrayHasKey('main', $manager->getConnections());
+    }
+
+    public function testReconnectCreatesFreshConnection(): void
+    {
+        $config = ['token' => 'your-token'];
+
+        $repo = Mockery::mock(Repository::class);
+        $factory = Mockery::mock(DigitalOceanFactory::class);
+        $manager = new DigitalOceanManager($repo, $factory);
+
+        $repo->shouldReceive('get')->twice()
+            ->with('digitalocean.default')->andReturn('main');
+        $repo->shouldReceive('get')->twice()
+            ->with('digitalocean.connections')->andReturn(['main' => $config]);
+
+        $first = Mockery::mock(Client::class);
+        $second = Mockery::mock(Client::class);
+
+        $factory->shouldReceive('make')->once()
+            ->with(['token' => 'your-token', 'name' => 'main'])->andReturn($first);
+        $factory->shouldReceive('make')->once()
+            ->with(['token' => 'your-token', 'name' => 'main'])->andReturn($second);
+
+        self::assertSame($first, $manager->connection());
+        self::assertSame($second, $manager->reconnect());
+    }
+
+    public function testDynamicCallForwardsToDefaultConnection(): void
+    {
+        $config = ['token' => 'your-token'];
+
+        $repo = Mockery::mock(Repository::class);
+        $factory = Mockery::mock(DigitalOceanFactory::class);
+        $manager = new DigitalOceanManager($repo, $factory);
+        $client = Mockery::mock(Client::class);
+        $region = Mockery::mock(Region::class);
+
+        $repo->shouldReceive('get')->once()
+            ->with('digitalocean.default')->andReturn('main');
+        $repo->shouldReceive('get')->once()
+            ->with('digitalocean.connections')->andReturn(['main' => $config]);
+
+        $factory->shouldReceive('make')->once()
+            ->with(['token' => 'your-token', 'name' => 'main'])->andReturn($client);
+        $client->shouldReceive('region')->once()->andReturn($region);
+
+        self::assertSame($region, $manager->region());
     }
 
     private static function getManager(array $config): DigitalOceanManager
