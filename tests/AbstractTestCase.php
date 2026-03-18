@@ -14,15 +14,63 @@ declare(strict_types=1);
 namespace GrahamCampbell\Tests\DigitalOcean;
 
 use GrahamCampbell\DigitalOcean\DigitalOceanServiceProvider;
-use GrahamCampbell\TestBench\AbstractPackageTestCase;
+use GrahamCampbell\TestBenchCore\HelperTrait;
+use GrahamCampbell\TestBenchCore\LaravelTrait;
+use GrahamCampbell\TestBenchCore\MockeryTrait;
+use Orchestra\Testbench\TestCase as OrchestraTestCase;
 
 /**
  * This is the abstract test case class.
  *
  * @author Graham Campbell <hello@gjcampbell.co.uk>
  */
-abstract class AbstractTestCase extends AbstractPackageTestCase
+abstract class AbstractTestCase extends OrchestraTestCase
 {
+    use HelperTrait;
+    use LaravelTrait;
+    use MockeryTrait;
+
+    /**
+     * Setup the application environment.
+     *
+     * @param \Illuminate\Contracts\Foundation\Application $app
+     *
+     * @return void
+     */
+    protected function getEnvironmentSetUp($app): void
+    {
+        $app->config->set('app.key', 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA');
+
+        $app->config->set('cache.driver', 'array');
+
+        $app->config->set('database.default', 'sqlite');
+        $app->config->set('database.connections.sqlite', [
+            'driver'   => 'sqlite',
+            'database' => ':memory:',
+            'prefix'   => '',
+        ]);
+
+        $app->config->set('mail.driver', 'log');
+
+        $app->config->set('session.driver', 'array');
+    }
+
+    /**
+     * Get the package service providers.
+     *
+     * @return string[]
+     */
+    protected function getPackageProviders($app): array
+    {
+        $provider = static::getServiceProviderClass();
+
+        if ($provider) {
+            return [$provider];
+        }
+
+        return [];
+    }
+
     /**
      * Get the service provider class.
      *

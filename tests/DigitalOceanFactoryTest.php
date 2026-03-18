@@ -17,11 +17,9 @@ use DigitalOceanV2\Client;
 use GrahamCampbell\DigitalOcean\Auth\AuthenticatorFactory;
 use GrahamCampbell\DigitalOcean\DigitalOceanFactory;
 use GrahamCampbell\DigitalOcean\HttpClient\BuilderFactory;
-use GrahamCampbell\TestBench\AbstractTestCase as AbstractTestBenchTestCase;
 use GuzzleHttp\Client as GuzzleClient;
 use GuzzleHttp\Psr7\HttpFactory as GuzzlePsrFactory;
 use Http\Client\Common\HttpMethodsClientInterface;
-use Illuminate\Contracts\Cache\Factory;
 use InvalidArgumentException;
 
 /**
@@ -29,7 +27,7 @@ use InvalidArgumentException;
  *
  * @author Graham Campbell <hello@gjcampbell.co.uk>
  */
-class DigitalOceanFactoryTest extends AbstractTestBenchTestCase
+class DigitalOceanFactoryTest extends AbstractUnitTestCase
 {
     public function testMakeStandard(): void
     {
